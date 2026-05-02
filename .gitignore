@@ -1,7 +1,12 @@
+*.iml
 .gradle/
+.idea/
 .tools/
 build/
 local.properties
+captures/
+externalNativeBuild/
+.cxx/
 
 app/build/
 !dist/
