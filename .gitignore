@@ -7,3 +7,11 @@ captures/
 externalNativeBuild/
 .cxx/
 app/build/
+.gradle/
+.tools/
+build/
+local.properties
+
+app/build/
+!dist/
+!dist/*.apk
