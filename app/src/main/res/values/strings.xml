@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">DELE Spanish Coach</string>
+    <string name="content_api_base_url">http://10.0.2.2:8000</string>
+</resources>

@@ -1,0 +1,41 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: dele_spanish_postgres
+    environment:
+      POSTGRES_DB: dele_spanish
+      POSTGRES_USER: dele_app
+      POSTGRES_PASSWORD: dele_app_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/001_schema.sql:ro
+      - ./database/seed.sql:/docker-entrypoint-initdb.d/002_seed.sql:ro
+      - ./database:/workspace/database:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dele_app -d dele_spanish"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  content-api:
+    image: python:3.12-slim
+    container_name: dele_spanish_content_api
+    working_dir: /app
+    environment:
+      DATABASE_URL: postgresql://dele_app:dele_app_password@postgres:5432/dele_spanish
+      PORT: "8000"
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./server:/app:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: >
+      sh -c "pip install --no-cache-dir -r requirements.txt &&
+      uvicorn main:app --host 0.0.0.0 --port 8000"
+
+volumes:
+  postgres_data:
