@@ -75,7 +75,7 @@ Rows are upserted by article `title`, so rerunning the import updates existing a
 Open the repository in Android Studio or run the following in an environment with Gradle and the Android SDK:
 
 ```bash
-gradle test assembleDebug
+./gradlew test assembleDebug
 ```
 
 The project uses the Android Gradle Plugin and plain Java Android views. If the content API is unavailable, article and vocabulary screens fall back to the bundled seed data.
