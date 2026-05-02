@@ -44,4 +44,35 @@ public class AssessmentEngineTest {
 
         Assert.assertEquals(DeleLevel.A1, result.getSuggestedLevel());
     }
+
+    @Test
+    public void dailyQuestionsMixPreviousIncorrectItemsWithNewItems() {
+        LearningRepository repository = new LearningRepository();
+        List<QuizQuestion> available = repository.getDailyQuestions(DeleLevel.B1);
+        List<String> incorrectIds = java.util.Arrays.asList(
+                available.get(2).getId(),
+                available.get(3).getId()
+        );
+
+        List<QuizQuestion> selected = repository.getDailyQuestions(DeleLevel.B1, incorrectIds, 4);
+
+        Assert.assertEquals(4, selected.size());
+        Assert.assertEquals(available.get(2), selected.get(0));
+        Assert.assertEquals(available.get(3), selected.get(1));
+        Assert.assertEquals(available.get(0), selected.get(2));
+        Assert.assertEquals(available.get(1), selected.get(3));
+    }
+
+    @Test
+    public void maxDailyQuestionsCanBeZero() {
+        LearningRepository repository = new LearningRepository();
+
+        List<QuizQuestion> selected = repository.getDailyQuestions(
+                DeleLevel.B1,
+                java.util.Collections.singletonList(repository.getDailyQuestions(DeleLevel.B1).get(0).getId()),
+                0
+        );
+
+        Assert.assertTrue(selected.isEmpty());
+    }
 }

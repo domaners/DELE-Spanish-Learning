@@ -5,16 +5,22 @@ import java.util.Collections;
 import java.util.List;
 
 final class QuizQuestion {
+    private final String id;
     private final DeleLevel level;
     private final String prompt;
     private final List<String> options;
     private final int correctAnswerIndex;
 
     QuizQuestion(DeleLevel level, String prompt, List<String> options, int correctAnswerIndex) {
+        this.id = level.name() + ":" + prompt;
         this.level = level;
         this.prompt = prompt;
         this.options = Collections.unmodifiableList(new ArrayList<>(options));
         this.correctAnswerIndex = correctAnswerIndex;
+    }
+
+    String getId() {
+        return id;
     }
 
     DeleLevel getLevel() {

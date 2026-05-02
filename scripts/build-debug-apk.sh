@@ -53,7 +53,7 @@ export ANDROID_HOME
 export ANDROID_SDK_ROOT="${ANDROID_HOME}"
 export PATH="${ANDROID_HOME}/platform-tools:${ANDROID_HOME}/cmdline-tools/latest/bin:${GRADLE_HOME}/bin:${PATH}"
 
-"${SDKMANAGER}" --licenses <<< "y" >/dev/null || true
+yes | "${SDKMANAGER}" --licenses >/dev/null || true
 "${SDKMANAGER}" \
   "platform-tools" \
   "platforms;android-${ANDROID_API_LEVEL}" \
