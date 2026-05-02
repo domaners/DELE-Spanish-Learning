@@ -54,6 +54,14 @@ final class LearningRepository {
         return getDailyQuestionsFor(level);
     }
 
+    List<QuizQuestion> getAllQuestions() {
+        List<QuizQuestion> result = new ArrayList<>(placementQuestions);
+        for (DeleLevel level : DeleLevel.values()) {
+            result.addAll(dailyQuestions.get(level));
+        }
+        return Collections.unmodifiableList(result);
+    }
+
     List<Article> getArticlesFor(DeleLevel level) {
         List<Article> result = new ArrayList<>();
         for (Article article : articles) {
@@ -310,9 +318,12 @@ final class LearningRepository {
         for (VerbConjugation verb : conjugations) {
             for (Map.Entry<String, String> form : verb.getForms().entrySet()) {
                 List<String> options = buildConjugationOptions(verb, form.getValue());
+                String prompt = "Conjugate " + verb.getInfinitive() + " (" + verb.getTense() + ") for " + form.getKey() + ".";
                 items.get(verb.getLevel()).add(new QuizQuestion(
                         verb.getLevel(),
-                        "Conjugate " + verb.getInfinitive() + " (" + verb.getTense() + ") for " + form.getKey() + ".",
+                        "verb:" + verbKey(verb) + ":" + form.getKey().replaceAll("[^a-zA-Z0-9]+", "-"),
+                        verbKey(verb),
+                        prompt,
                         options,
                         options.indexOf(form.getValue())
                 ));
@@ -350,7 +361,32 @@ final class LearningRepository {
     }
 
     private QuizQuestion question(DeleLevel level, String prompt, String a, String b, String c, String d, int correctAnswerIndex) {
-        return new QuizQuestion(level, prompt, Arrays.asList(a, b, c, d), correctAnswerIndex);
+        return new QuizQuestion(level, questionId(level, prompt), studyItemKey(prompt), prompt, Arrays.asList(a, b, c, d), correctAnswerIndex);
+    }
+
+    private String verbKey(VerbConjugation verb) {
+        return "verb:" + verb.getInfinitive() + ":" + verb.getTense();
+    }
+
+    private String studyItemKey(String prompt) {
+        String lowerPrompt = prompt.toLowerCase();
+        for (VocabularyEntry entry : vocabulary) {
+            if (lowerPrompt.contains(entry.getSpanish().toLowerCase()) || lowerPrompt.contains(entry.getEnglish().toLowerCase())) {
+                return vocabularyKey(entry);
+            }
+        }
+        return "";
+    }
+
+    String vocabularyKey(VocabularyEntry entry) {
+        return "vocab:" + entry.getSpanish();
+    }
+
+    private String questionId(DeleLevel level, String prompt) {
+        return level.name() + ":" + prompt
+                .toLowerCase()
+                .replaceAll("[^a-z0-9]+", "-")
+                .replaceAll("(^-|-$)", "");
     }
 
     private Map<String, String> mapOf(String... values) {

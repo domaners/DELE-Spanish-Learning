@@ -5,11 +5,13 @@ import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Bundle;
+import android.text.Editable;
 import android.text.TextUtils;
+import android.text.TextWatcher;
 import android.view.Gravity;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.RadioButton;
@@ -25,9 +27,11 @@ import org.json.JSONObject;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 public class MainActivity extends Activity {
     private static final String PREFS = "dele_spanish_progress";
@@ -36,7 +40,10 @@ public class MainActivity extends Activity {
     private static final String KEY_DAILY_SCORE = "dailyScore";
     private static final String KEY_QUESTION_COUNT = "questionCount";
     private static final String KEY_TEST_HISTORY = "testHistory";
+    private static final String KEY_FAVORITES = "favorites";
+    private static final String KEY_SRS_PROGRESS = "srsProgress";
     private static final int DEFAULT_QUESTION_COUNT = 10;
+    private static final int READY_PROFICIENCY = 80;
 
     private LearningRepository repository;
     private AssessmentEngine assessmentEngine;
@@ -111,7 +118,9 @@ public class MainActivity extends Activity {
         addMenuButton("Dashboard", () -> showHome());
         addMenuButton("Daily quiz", () -> showDailyQuiz(getTargetLevel()));
         addMenuButton("Grammar articles", () -> showArticles(getTargetLevel()));
-        addMenuButton("Dictionary and verbs", () -> showDictionary(getTargetLevel()));
+        addMenuButton("Vocabulary", () -> showVocabulary(getTargetLevel(), ""));
+        addMenuButton("Verbs", () -> showVerbs(getTargetLevel(), ""));
+        addMenuButton("Favourites", () -> showFavorites());
         addMenuButton("Test history", () -> showTestHistory());
         addMenuButton("Settings", () -> showSettings());
         addMenuButton("Retake placement", () -> showPlacement());
@@ -219,15 +228,19 @@ public class MainActivity extends Activity {
     private void showHome() {
         resetScreen("Today in Spanish");
         DeleLevel level = getTargetLevel();
+        int readiness = getLevelReadiness(level);
         addBody("Target exam: " + level.getLabel() + "\n"
                 + level.getExamFocus() + "\n\n"
                 + "Quiz size: " + getQuestionCount() + " questions\n"
-                + "Latest daily quiz score: " + preferences.getInt(KEY_DAILY_SCORE, 0));
+                + "Latest daily quiz score: " + preferences.getInt(KEY_DAILY_SCORE, 0) + "\n"
+                + "Exam readiness: " + readiness + "% - " + getReadinessMessage(readiness));
 
         addLevelSummary(level);
         addButton("Daily quiz").setOnClickListener(view -> showDailyQuiz(level));
         addButton("Grammar articles").setOnClickListener(view -> showArticles(level));
-        addButton("Dictionary and verbs").setOnClickListener(view -> showDictionary(level));
+        addButton("Vocabulary").setOnClickListener(view -> showVocabulary(level, ""));
+        addButton("Verbs").setOnClickListener(view -> showVerbs(level, ""));
+        addButton("Favourites").setOnClickListener(view -> showFavorites());
         addButton("Test history").setOnClickListener(view -> showTestHistory());
         addButton("Settings").setOnClickListener(view -> showSettings());
     }
@@ -292,7 +305,7 @@ public class MainActivity extends Activity {
     private void showDailyQuiz(DeleLevel targetLevel) {
         resetScreen("Daily consolidation quiz");
         selectedAnswers.clear();
-        List<QuizQuestion> questions = limitQuestions(repository.getDailyQuestions(targetLevel));
+        List<QuizQuestion> questions = selectSrsQuestions(repository.getDailyQuestions(targetLevel));
         addBody(questions.size() + " questions are selected up to " + targetLevel.getLabel()
                 + ". Verb conjugation forms are included as individual recall prompts.");
 
@@ -306,6 +319,7 @@ public class MainActivity extends Activity {
                 return;
             }
             AssessmentEngine.AssessmentResult result = assessmentEngine.evaluate(questions, selectedAnswers);
+            updateSrsProgress(questions);
             saveTestHistory(result, questions, targetLevel);
             preferences.edit()
                     .putString(KEY_TARGET_LEVEL, result.getSuggestedLevel().name())
@@ -402,35 +416,121 @@ public class MainActivity extends Activity {
         resetScreen("Grammar articles");
         addBody("DELE-aligned explanations are grouped from A1 to " + targetLevel.getLabel() + ".");
         for (Article article : repository.getArticlesUpTo(targetLevel)) {
+            String key = articleKey(article);
             LinearLayout card = addCard();
             addCardTitle(card, article.getLevel().getLabel() + " - " + article.getTitle());
             addCardBody(card, article.getGrammarFocus());
             addCardBody(card, article.getBody());
             addCardBody(card, "Key vocabulary: " + TextUtils.join(", ", article.getVocabulary()));
+            addFavoriteButton(card, key);
         }
         addBackHomeButton();
     }
 
-    private void showDictionary(DeleLevel targetLevel) {
-        resetScreen("Dictionary and conjugations");
-        addBody("Vocabulary and verb forms are tagged by the DELE level where they become most useful.");
-
-        addSectionHeader("Vocabulary");
+    private void showVocabulary(DeleLevel targetLevel, String query) {
+        resetScreen("Vocabulary");
+        addBody("Search filters anywhere in the Spanish word, English definition, theme, or example.");
+        addSearchBox(query, text -> showVocabulary(targetLevel, text));
+        String normalizedQuery = query.toLowerCase(Locale.ROOT);
         for (VocabularyEntry entry : repository.getVocabularyUpTo(targetLevel)) {
+            if (!matchesVocabulary(entry, normalizedQuery)) {
+                continue;
+            }
+            String key = vocabularyKey(entry);
             LinearLayout card = addCard();
             addCardTitle(card, entry.getSpanish() + " - " + entry.getEnglish());
             addCardBody(card, entry.getLevel().getLabel() + " | " + entry.getTheme());
-            addCardBody(card, entry.getExample());
+            addCardBody(card, entry.getExample() + "\nProficiency: " + getItemProficiency(key) + "%");
+            addFavoriteButton(card, key);
         }
+        addBackHomeButton();
+    }
 
-        addSectionHeader("Verb conjugations");
+    private void showVerbs(DeleLevel targetLevel, String query) {
+        resetScreen("Verbs");
+        addBody("Search filters anywhere in the infinitive, definition, tense, or conjugated forms.");
+        addSearchBox(query, text -> showVerbs(targetLevel, text));
+        String normalizedQuery = query.toLowerCase(Locale.ROOT);
         for (VerbConjugation verb : repository.getVerbsUpTo(targetLevel)) {
+            if (!matchesVerb(verb, normalizedQuery)) {
+                continue;
+            }
+            String key = verbKey(verb);
             LinearLayout card = addCard();
             addCardTitle(card, verb.getInfinitive() + " - " + verb.getMeaning());
             addCardBody(card, verb.getLevel().getLabel() + " | " + verb.getTense());
-            addCardBody(card, verb.describeForms());
+            addCardBody(card, verb.describeForms() + "\nProficiency: " + getItemProficiency(key) + "%");
+            addFavoriteButton(card, key);
         }
         addBackHomeButton();
+    }
+
+    private void showFavorites() {
+        resetScreen("Favourites");
+        Set<String> favorites = getFavorites();
+        if (favorites.isEmpty()) {
+            addBody("No favourites yet. Use the favourite buttons on vocabulary, verbs, and grammar articles.");
+            addBackHomeButton();
+            return;
+        }
+        addFavoriteArticles(favorites);
+        addFavoriteVocabulary(favorites);
+        addFavoriteVerbs(favorites);
+        addBackHomeButton();
+    }
+
+    private void addFavoriteArticles(Set<String> favorites) {
+        boolean hasItems = false;
+        for (Article article : repository.getArticlesUpTo(DeleLevel.C2)) {
+            String key = articleKey(article);
+            if (!favorites.contains(key)) {
+                continue;
+            }
+            if (!hasItems) {
+                addSectionHeader("Grammar articles");
+                hasItems = true;
+            }
+            LinearLayout card = addCard();
+            addCardTitle(card, article.getLevel().getLabel() + " - " + article.getTitle());
+            addCardBody(card, article.getGrammarFocus());
+            addFavoriteButton(card, key);
+        }
+    }
+
+    private void addFavoriteVocabulary(Set<String> favorites) {
+        boolean hasItems = false;
+        for (VocabularyEntry entry : repository.getVocabularyUpTo(DeleLevel.C2)) {
+            String key = vocabularyKey(entry);
+            if (!favorites.contains(key)) {
+                continue;
+            }
+            if (!hasItems) {
+                addSectionHeader("Vocabulary");
+                hasItems = true;
+            }
+            LinearLayout card = addCard();
+            addCardTitle(card, entry.getSpanish() + " - " + entry.getEnglish());
+            addCardBody(card, "Proficiency: " + getItemProficiency(key) + "%\n" + entry.getExample());
+            addFavoriteButton(card, key);
+        }
+    }
+
+    private void addFavoriteVerbs(Set<String> favorites) {
+        boolean hasItems = false;
+        for (VerbConjugation verb : repository.getVerbsUpTo(DeleLevel.C2)) {
+            String key = verbKey(verb);
+            if (!favorites.contains(key)) {
+                continue;
+            }
+            if (!hasItems) {
+                addSectionHeader("Verbs");
+                hasItems = true;
+            }
+            LinearLayout card = addCard();
+            addCardTitle(card, verb.getInfinitive() + " - " + verb.getMeaning());
+            addCardBody(card, verb.describeForms() + "\nProficiency: " + getItemProficiency(key) + "%");
+            addFavoriteButton(card, key);
+        }
     }
 
     private void saveTestHistory(AssessmentEngine.AssessmentResult result, List<QuizQuestion> questions, DeleLevel targetLevel) {
@@ -472,9 +572,106 @@ public class MainActivity extends Activity {
         }
     }
 
-    private List<QuizQuestion> limitQuestions(List<QuizQuestion> questions) {
-        int max = Math.min(getQuestionCount(), questions.size());
-        return new ArrayList<>(questions.subList(0, max));
+    private List<QuizQuestion> selectSrsQuestions(List<QuizQuestion> questions) {
+        List<QuizQuestion> due = new ArrayList<>();
+        List<QuizQuestion> upcoming = new ArrayList<>();
+        long now = System.currentTimeMillis();
+        JSONObject progress = getSrsProgress();
+        for (QuizQuestion question : questions) {
+            JSONObject item = progress.optJSONObject(question.getId());
+            if (item == null || item.optLong("dueAt", 0) <= now) {
+                due.add(question);
+            } else {
+                upcoming.add(question);
+            }
+        }
+        due.addAll(upcoming);
+        int max = Math.min(getQuestionCount(), due.size());
+        return new ArrayList<>(due.subList(0, max));
+    }
+
+    private void updateSrsProgress(List<QuizQuestion> questions) {
+        JSONObject progress = getSrsProgress();
+        long now = System.currentTimeMillis();
+        for (QuizQuestion question : questions) {
+            Integer selectedIndex = selectedAnswers.get(question);
+            boolean correct = question.isCorrect(selectedIndex);
+            JSONObject item = progress.optJSONObject(question.getId());
+            if (item == null) {
+                item = new JSONObject();
+            }
+            int attempts = item.optInt("attempts", 0) + 1;
+            int correctAttempts = item.optInt("correct", 0) + (correct ? 1 : 0);
+            int interval = correct ? Math.max(1, item.optInt("interval", 0) * 2) : 0;
+            int dueHours = correct ? (interval == 1 ? 24 : interval * 24) : 4;
+            int proficiency = Math.max(0, Math.min(100, item.optInt("proficiency", 0) + (correct ? 20 : -15)));
+            try {
+                item.put("attempts", attempts);
+                item.put("correct", correctAttempts);
+                item.put("interval", interval);
+                item.put("dueAt", now + dueHours * 60L * 60L * 1000L);
+                item.put("proficiency", proficiency);
+                item.put("level", question.getLevel().name());
+                item.put("studyItemKey", question.getStudyItemKey());
+                progress.put(question.getId(), item);
+            } catch (JSONException exception) {
+                Toast.makeText(this, "Could not update quiz progress.", Toast.LENGTH_SHORT).show();
+            }
+        }
+        preferences.edit().putString(KEY_SRS_PROGRESS, progress.toString()).apply();
+    }
+
+    private JSONObject getSrsProgress() {
+        try {
+            return new JSONObject(preferences.getString(KEY_SRS_PROGRESS, "{}"));
+        } catch (JSONException exception) {
+            return new JSONObject();
+        }
+    }
+
+    private int getItemProficiency(String itemKey) {
+        JSONObject progress = getSrsProgress();
+        int total = 0;
+        int count = 0;
+        for (QuizQuestion question : getAllQuestions()) {
+            if (!itemKey.equals(question.getStudyItemKey())) {
+                continue;
+            }
+            JSONObject item = progress.optJSONObject(question.getId());
+            if (item != null) {
+                total += item.optInt("proficiency", 0);
+                count++;
+            }
+        }
+        return count == 0 ? 0 : Math.round((float) total / count);
+    }
+
+    private List<QuizQuestion> getAllQuestions() {
+        List<QuizQuestion> questions = new ArrayList<>(repository.getPlacementQuestions());
+        questions.addAll(repository.getDailyQuestions(DeleLevel.C2));
+        return questions;
+    }
+
+    private int getLevelReadiness(DeleLevel level) {
+        JSONObject progress = getSrsProgress();
+        int total = 0;
+        int count = 0;
+        for (QuizQuestion question : repository.getDailyQuestions(level)) {
+            if (question.getLevel() != level) {
+                continue;
+            }
+            JSONObject item = progress.optJSONObject(question.getId());
+            total += item == null ? 0 : item.optInt("proficiency", 0);
+            count++;
+        }
+        return count == 0 ? 0 : Math.round((float) total / count);
+    }
+
+    private String getReadinessMessage(int readiness) {
+        if (readiness >= READY_PROFICIENCY) {
+            return "ready to book the exam";
+        }
+        return "keep reviewing with SRS";
     }
 
     private void addQuestion(QuizQuestion question) {
@@ -577,6 +774,107 @@ public class MainActivity extends Activity {
         card.addView(view);
     }
 
+    private void addSearchBox(String query, SearchHandler handler) {
+        EditText search = new EditText(this);
+        search.setSingleLine(true);
+        search.setHint("Search");
+        search.setText(query);
+        search.setSelection(search.getText().length());
+        search.setTextColor(getColor(R.color.text_primary));
+        search.setHintTextColor(getColor(R.color.text_secondary));
+        search.setPadding(dp(12), dp(8), dp(12), dp(8));
+        search.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence text, int start, int count, int after) {
+            }
+
+            @Override
+            public void onTextChanged(CharSequence text, int start, int before, int count) {
+                handler.onSearchChanged(text.toString());
+            }
+
+            @Override
+            public void afterTextChanged(Editable editable) {
+            }
+        });
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT);
+        params.setMargins(0, 0, 0, dp(12));
+        root.addView(search, params);
+    }
+
+    private boolean matchesVocabulary(VocabularyEntry entry, String query) {
+        if (query.isEmpty()) {
+            return true;
+        }
+        return contains(entry.getSpanish(), query)
+                || contains(entry.getEnglish(), query)
+                || contains(entry.getTheme(), query)
+                || contains(entry.getExample(), query);
+    }
+
+    private boolean matchesVerb(VerbConjugation verb, String query) {
+        if (query.isEmpty()) {
+            return true;
+        }
+        return contains(verb.getInfinitive(), query)
+                || contains(verb.getMeaning(), query)
+                || contains(verb.getTense(), query)
+                || contains(verb.describeForms(), query);
+    }
+
+    private boolean contains(String value, String query) {
+        return value.toLowerCase(Locale.ROOT).contains(query);
+    }
+
+    private void addFavoriteButton(LinearLayout card, String key) {
+        Button button = new Button(this);
+        button.setAllCaps(false);
+        button.setText(isFavorite(key) ? "Remove favourite" : "Add favourite");
+        button.setOnClickListener(view -> {
+            toggleFavorite(key);
+            button.setText(isFavorite(key) ? "Remove favourite" : "Add favourite");
+        });
+        card.addView(button);
+    }
+
+    private String articleKey(Article article) {
+        return "article:" + article.getLevel().name() + ":" + slug(article.getTitle());
+    }
+
+    private String vocabularyKey(VocabularyEntry entry) {
+        return "vocab:" + entry.getSpanish();
+    }
+
+    private String verbKey(VerbConjugation verb) {
+        return "verb:" + verb.getInfinitive() + ":" + verb.getTense();
+    }
+
+    private String slug(String value) {
+        return value.toLowerCase(Locale.ROOT)
+                .replaceAll("[^a-z0-9]+", "-")
+                .replaceAll("(^-|-$)", "");
+    }
+
+    private Set<String> getFavorites() {
+        return new HashSet<>(preferences.getStringSet(KEY_FAVORITES, new HashSet<>()));
+    }
+
+    private boolean isFavorite(String key) {
+        return getFavorites().contains(key);
+    }
+
+    private void toggleFavorite(String key) {
+        Set<String> favorites = getFavorites();
+        if (favorites.contains(key)) {
+            favorites.remove(key);
+        } else {
+            favorites.add(key);
+        }
+        preferences.edit().putStringSet(KEY_FAVORITES, favorites).apply();
+    }
+
     private DeleLevel getTargetLevel() {
         String value = preferences.getString(KEY_TARGET_LEVEL, DeleLevel.A1.name());
         try {
@@ -592,5 +890,9 @@ public class MainActivity extends Activity {
 
     private int dp(int value) {
         return (int) (value * getResources().getDisplayMetrics().density);
+    }
+
+    private interface SearchHandler {
+        void onSearchChanged(String text);
     }
 }

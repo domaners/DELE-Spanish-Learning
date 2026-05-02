@@ -55,6 +55,7 @@ public class AssessmentEngineTest {
         for (QuizQuestion question : questions) {
             if (question.getPrompt().contains("Conjugate ser (presente) for yo.")) {
                 foundConjugationPrompt = true;
+                Assert.assertEquals("verb:ser:presente", question.getStudyItemKey());
                 Assert.assertEquals("soy", question.getOptions().get(question.getCorrectAnswerIndex()));
             }
         }
