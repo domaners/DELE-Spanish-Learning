@@ -78,4 +78,6 @@ Open the repository in Android Studio or run the following in an environment wit
 ./gradlew test assembleDebug
 ```
 
+The checked-in debug APK is available at `dist/dele-spanish-learning-debug.apk`.
+
 The project uses the Android Gradle Plugin and plain Java Android views. If the content API is unavailable, article and vocabulary screens fall back to the bundled seed data.
