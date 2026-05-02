@@ -430,39 +430,61 @@ public class MainActivity extends Activity {
     private void showVocabulary(DeleLevel targetLevel, String query) {
         resetScreen("Vocabulary");
         addBody("Search filters anywhere in the Spanish word, English definition, theme, or example.");
-        addSearchBox(query, text -> showVocabulary(targetLevel, text));
+        LinearLayout results = addResultsContainer();
+        addSearchBox(query, text -> renderVocabularyResults(results, targetLevel, text));
+        renderVocabularyResults(results, targetLevel, query);
+        addBackHomeButton();
+    }
+
+    private void renderVocabularyResults(LinearLayout results, DeleLevel targetLevel, String query) {
+        results.removeAllViews();
         String normalizedQuery = query.toLowerCase(Locale.ROOT);
+        boolean hasMatches = false;
         for (VocabularyEntry entry : repository.getVocabularyUpTo(targetLevel)) {
             if (!matchesVocabulary(entry, normalizedQuery)) {
                 continue;
             }
+            hasMatches = true;
             String key = vocabularyKey(entry);
-            LinearLayout card = addCard();
+            LinearLayout card = addCard(results);
             addCardTitle(card, entry.getSpanish() + " - " + entry.getEnglish());
             addCardBody(card, entry.getLevel().getLabel() + " | " + entry.getTheme());
             addCardBody(card, entry.getExample() + "\nProficiency: " + getItemProficiency(key) + "%");
             addFavoriteButton(card, key);
         }
-        addBackHomeButton();
+        if (!hasMatches) {
+            addCardBody(results, "No vocabulary matches found.");
+        }
     }
 
     private void showVerbs(DeleLevel targetLevel, String query) {
         resetScreen("Verbs");
         addBody("Search filters anywhere in the infinitive, definition, tense, or conjugated forms.");
-        addSearchBox(query, text -> showVerbs(targetLevel, text));
+        LinearLayout results = addResultsContainer();
+        addSearchBox(query, text -> renderVerbResults(results, targetLevel, text));
+        renderVerbResults(results, targetLevel, query);
+        addBackHomeButton();
+    }
+
+    private void renderVerbResults(LinearLayout results, DeleLevel targetLevel, String query) {
+        results.removeAllViews();
         String normalizedQuery = query.toLowerCase(Locale.ROOT);
+        boolean hasMatches = false;
         for (VerbConjugation verb : repository.getVerbsUpTo(targetLevel)) {
             if (!matchesVerb(verb, normalizedQuery)) {
                 continue;
             }
+            hasMatches = true;
             String key = verbKey(verb);
-            LinearLayout card = addCard();
+            LinearLayout card = addCard(results);
             addCardTitle(card, verb.getInfinitive() + " - " + verb.getMeaning());
             addCardBody(card, verb.getLevel().getLabel() + " | " + verb.getTense());
             addCardBody(card, verb.describeForms() + "\nProficiency: " + getItemProficiency(key) + "%");
             addFavoriteButton(card, key);
         }
-        addBackHomeButton();
+        if (!hasMatches) {
+            addCardBody(results, "No verb matches found.");
+        }
     }
 
     private void showFavorites() {
@@ -742,6 +764,10 @@ public class MainActivity extends Activity {
     }
 
     private LinearLayout addCard() {
+        return addCard(root);
+    }
+
+    private LinearLayout addCard(LinearLayout parent) {
         LinearLayout card = new LinearLayout(this);
         card.setOrientation(LinearLayout.VERTICAL);
         card.setPadding(dp(16), dp(16), dp(16), dp(16));
@@ -750,8 +776,17 @@ public class MainActivity extends Activity {
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT);
         params.setMargins(0, dp(8), 0, dp(8));
-        root.addView(card, params);
+        parent.addView(card, params);
         return card;
+    }
+
+    private LinearLayout addResultsContainer() {
+        LinearLayout results = new LinearLayout(this);
+        results.setOrientation(LinearLayout.VERTICAL);
+        root.addView(results, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT));
+        return results;
     }
 
     private void addCardTitle(LinearLayout card, String text) {
