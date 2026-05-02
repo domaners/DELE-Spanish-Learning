@@ -11,7 +11,9 @@ A1 through C2.
 - Dictionary entries tagged by level, theme, examples, and English meanings.
 - Verb conjugation cards aligned to exam progression.
 - Daily quiz flow that consolidates grammar and vocabulary up to the user's
-  current target.
+  current target, mixes in previous incorrect answers, and respects a
+  configurable maximum question count.
+- Test history for reviewing completed daily tests and incorrect answers.
 - Local progress storage with `SharedPreferences`.
 
 ## Build an installable Android APK

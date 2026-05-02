@@ -54,6 +54,66 @@ final class LearningRepository {
         return getDailyQuestionsFor(level);
     }
 
+    List<QuizQuestion> getDailyQuestions(DeleLevel level, List<String> incorrectQuestionIds, int maxItems) {
+        List<QuizQuestion> available = getDailyQuestionsFor(level);
+        int limit = Math.min(Math.max(0, maxItems), available.size());
+        if (limit == 0) {
+            return Collections.emptyList();
+        }
+
+        Map<String, QuizQuestion> availableById = new LinkedHashMap<>();
+        for (QuizQuestion question : available) {
+            availableById.put(question.getId(), question);
+        }
+
+        List<QuizQuestion> reviewItems = new ArrayList<>();
+        for (String questionId : incorrectQuestionIds) {
+            QuizQuestion question = availableById.get(questionId);
+            if (question != null && !reviewItems.contains(question)) {
+                reviewItems.add(question);
+            }
+        }
+
+        List<QuizQuestion> newItems = new ArrayList<>();
+        for (QuizQuestion question : available) {
+            if (!reviewItems.contains(question)) {
+                newItems.add(question);
+            }
+        }
+
+        List<QuizQuestion> selected = new ArrayList<>();
+        int reviewTarget = newItems.isEmpty() ? limit : Math.min(reviewItems.size(), (limit + 1) / 2);
+        for (int i = 0; i < reviewTarget; i++) {
+            selected.add(reviewItems.get(i));
+        }
+        for (QuizQuestion question : newItems) {
+            if (selected.size() == limit) {
+                break;
+            }
+            selected.add(question);
+        }
+        for (QuizQuestion question : reviewItems) {
+            if (selected.size() == limit) {
+                break;
+            }
+            if (!selected.contains(question)) {
+                selected.add(question);
+            }
+        }
+        return Collections.unmodifiableList(selected);
+    }
+
+    QuizQuestion getDailyQuestionById(String id) {
+        for (List<QuizQuestion> questions : dailyQuestions.values()) {
+            for (QuizQuestion question : questions) {
+                if (question.getId().equals(id)) {
+                    return question;
+                }
+            }
+        }
+        return null;
+    }
+
     List<Article> getArticlesFor(DeleLevel level) {
         List<Article> result = new ArrayList<>();
         for (Article article : articles) {
