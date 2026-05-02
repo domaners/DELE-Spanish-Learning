@@ -430,8 +430,9 @@ public class MainActivity extends Activity {
     private void showVocabulary(DeleLevel targetLevel, String query) {
         resetScreen("Vocabulary");
         addBody("Search filters anywhere in the Spanish word, English definition, theme, or example.");
-        LinearLayout results = addResultsContainer();
+        LinearLayout results = createResultsContainer();
         addSearchBox(query, text -> renderVocabularyResults(results, targetLevel, text));
+        addResultsContainer(results);
         renderVocabularyResults(results, targetLevel, query);
         addBackHomeButton();
     }
@@ -460,8 +461,9 @@ public class MainActivity extends Activity {
     private void showVerbs(DeleLevel targetLevel, String query) {
         resetScreen("Verbs");
         addBody("Search filters anywhere in the infinitive, definition, tense, or conjugated forms.");
-        LinearLayout results = addResultsContainer();
+        LinearLayout results = createResultsContainer();
         addSearchBox(query, text -> renderVerbResults(results, targetLevel, text));
+        addResultsContainer(results);
         renderVerbResults(results, targetLevel, query);
         addBackHomeButton();
     }
@@ -780,13 +782,16 @@ public class MainActivity extends Activity {
         return card;
     }
 
-    private LinearLayout addResultsContainer() {
+    private LinearLayout createResultsContainer() {
         LinearLayout results = new LinearLayout(this);
         results.setOrientation(LinearLayout.VERTICAL);
+        return results;
+    }
+
+    private void addResultsContainer(LinearLayout results) {
         root.addView(results, new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT));
-        return results;
     }
 
     private void addCardTitle(LinearLayout card, String text) {
