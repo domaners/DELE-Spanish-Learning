@@ -1,10 +1,18 @@
 # DELE Spanish Learning
 
-A lightweight native Android starter app for DELE Spanish study practice.
+An Android app prototype for learning Spanish against the DELE exam ladder from
+A1 through C2.
 
-The app currently provides an installable Android shell with a focused home screen
-for study areas such as vocabulary, listening, writing, and speaking. It is ready
-for future lesson and exercise content to be added under `app/src/main`.
+## What the app includes
+
+- First-run placement test that recommends a target DELE exam level.
+- Dashboard showing the user's current recommended target and readiness focus.
+- DELE-aligned grammar articles for A1, A2, B1, B2, C1, and C2.
+- Dictionary entries tagged by level, theme, examples, and English meanings.
+- Verb conjugation cards aligned to exam progression.
+- Daily quiz flow that consolidates grammar and vocabulary up to the user's
+  current target.
+- Local progress storage with `SharedPreferences`.
 
 ## Build an installable Android APK
 
@@ -46,7 +54,11 @@ source because this is a debug build.
 ```text
 app/
   src/main/AndroidManifest.xml
-  src/main/java/com/dele/spanishlearning/MainActivity.java
+  src/main/java/com/example/delespanish/
+    MainActivity.java
+    LearningRepository.java
+    AssessmentEngine.java
+    DeleLevel.java
   src/main/res/
 scripts/build-debug-apk.sh
 ```
