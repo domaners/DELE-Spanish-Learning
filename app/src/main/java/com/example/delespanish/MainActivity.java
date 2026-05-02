@@ -170,12 +170,17 @@ public class MainActivity extends Activity {
         header.setPadding(0, 0, 0, dp(12));
 
         Button menuButton = new Button(this);
-        menuButton.setText("Menu");
+        menuButton.setText("☰");
         menuButton.setAllCaps(false);
+        menuButton.setTextSize(24);
+        menuButton.setTextColor(getColor(R.color.text_primary));
+        menuButton.setBackgroundColor(Color.WHITE);
+        menuButton.setMinWidth(0);
+        menuButton.setMinHeight(0);
         menuButton.setOnClickListener(view -> showMenu());
         header.addView(menuButton, new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT));
+                dp(48),
+                dp(48)));
 
         TextView titleView = new TextView(this);
         titleView.setText(title);
@@ -418,11 +423,10 @@ public class MainActivity extends Activity {
         for (Article article : repository.getArticlesUpTo(targetLevel)) {
             String key = articleKey(article);
             LinearLayout card = addCard();
-            addCardTitle(card, article.getLevel().getLabel() + " - " + article.getTitle());
+            addFavoriteCardTitle(card, article.getLevel().getLabel() + " - " + article.getTitle(), key);
             addCardBody(card, article.getGrammarFocus());
             addCardBody(card, article.getBody());
             addCardBody(card, "Key vocabulary: " + TextUtils.join(", ", article.getVocabulary()));
-            addFavoriteButton(card, key);
         }
         addBackHomeButton();
     }
@@ -448,10 +452,9 @@ public class MainActivity extends Activity {
             hasMatches = true;
             String key = vocabularyKey(entry);
             LinearLayout card = addCard(results);
-            addCardTitle(card, entry.getSpanish() + " - " + entry.getEnglish());
+            addFavoriteCardTitle(card, entry.getSpanish() + " - " + entry.getEnglish(), key);
             addCardBody(card, entry.getLevel().getLabel() + " | " + entry.getTheme());
             addCardBody(card, entry.getExample() + "\nProficiency: " + getItemProficiency(key) + "%");
-            addFavoriteButton(card, key);
         }
         if (!hasMatches) {
             addCardBody(results, "No vocabulary matches found.");
@@ -479,10 +482,9 @@ public class MainActivity extends Activity {
             hasMatches = true;
             String key = verbKey(verb);
             LinearLayout card = addCard(results);
-            addCardTitle(card, verb.getInfinitive() + " - " + verb.getMeaning());
+            addFavoriteCardTitle(card, verb.getInfinitive() + " - " + verb.getMeaning(), key);
             addCardBody(card, verb.getLevel().getLabel() + " | " + verb.getTense());
             addCardBody(card, verb.describeForms() + "\nProficiency: " + getItemProficiency(key) + "%");
-            addFavoriteButton(card, key);
         }
         if (!hasMatches) {
             addCardBody(results, "No verb matches found.");
@@ -515,9 +517,8 @@ public class MainActivity extends Activity {
                 hasItems = true;
             }
             LinearLayout card = addCard();
-            addCardTitle(card, article.getLevel().getLabel() + " - " + article.getTitle());
+            addFavoriteCardTitle(card, article.getLevel().getLabel() + " - " + article.getTitle(), key);
             addCardBody(card, article.getGrammarFocus());
-            addFavoriteButton(card, key);
         }
     }
 
@@ -533,9 +534,8 @@ public class MainActivity extends Activity {
                 hasItems = true;
             }
             LinearLayout card = addCard();
-            addCardTitle(card, entry.getSpanish() + " - " + entry.getEnglish());
+            addFavoriteCardTitle(card, entry.getSpanish() + " - " + entry.getEnglish(), key);
             addCardBody(card, "Proficiency: " + getItemProficiency(key) + "%\n" + entry.getExample());
-            addFavoriteButton(card, key);
         }
     }
 
@@ -551,9 +551,8 @@ public class MainActivity extends Activity {
                 hasItems = true;
             }
             LinearLayout card = addCard();
-            addCardTitle(card, verb.getInfinitive() + " - " + verb.getMeaning());
+            addFavoriteCardTitle(card, verb.getInfinitive() + " - " + verb.getMeaning(), key);
             addCardBody(card, verb.describeForms() + "\nProficiency: " + getItemProficiency(key) + "%");
-            addFavoriteButton(card, key);
         }
     }
 
@@ -804,6 +803,39 @@ public class MainActivity extends Activity {
         card.addView(view);
     }
 
+    private void addFavoriteCardTitle(LinearLayout card, String text, String key) {
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        row.setPadding(0, 0, 0, dp(6));
+
+        TextView title = new TextView(this);
+        title.setText(text);
+        title.setTextSize(18);
+        title.setTypeface(Typeface.DEFAULT_BOLD);
+        title.setTextColor(getColor(R.color.text_primary));
+        row.addView(title, new LinearLayout.LayoutParams(
+                0,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                1f));
+
+        Button heart = new Button(this);
+        heart.setAllCaps(false);
+        heart.setText(isFavorite(key) ? "♥" : "♡");
+        heart.setTextSize(24);
+        heart.setTextColor(getColor(R.color.primary));
+        heart.setBackgroundColor(Color.TRANSPARENT);
+        heart.setMinWidth(0);
+        heart.setMinHeight(0);
+        heart.setPadding(0, 0, 0, 0);
+        heart.setOnClickListener(view -> {
+            toggleFavorite(key);
+            heart.setText(isFavorite(key) ? "♥" : "♡");
+        });
+        row.addView(heart, new LinearLayout.LayoutParams(dp(48), dp(48)));
+        card.addView(row);
+    }
+
     private void addCardBody(LinearLayout card, String text) {
         TextView view = new TextView(this);
         view.setText(text);
@@ -866,17 +898,6 @@ public class MainActivity extends Activity {
 
     private boolean contains(String value, String query) {
         return value.toLowerCase(Locale.ROOT).contains(query);
-    }
-
-    private void addFavoriteButton(LinearLayout card, String key) {
-        Button button = new Button(this);
-        button.setAllCaps(false);
-        button.setText(isFavorite(key) ? "Remove favourite" : "Add favourite");
-        button.setOnClickListener(view -> {
-            toggleFavorite(key);
-            button.setText(isFavorite(key) ? "Remove favourite" : "Add favourite");
-        });
-        card.addView(button);
     }
 
     private String articleKey(Article article) {
