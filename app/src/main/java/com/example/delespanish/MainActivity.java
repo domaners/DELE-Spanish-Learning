@@ -15,7 +15,6 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -46,11 +45,37 @@ public class MainActivity extends Activity {
         scrollView.addView(root);
         setContentView(scrollView);
 
-        if (preferences.getBoolean(KEY_PLACEMENT_COMPLETE, false)) {
-            showHome();
-        } else {
-            showPlacement();
-        }
+        loadContent();
+    }
+
+    private void loadContent() {
+        root.removeAllViews();
+        addTitle("Spanish DELE Coach");
+        addBody("Loading DELE articles, dictionary entries, verb conjugations and quiz questions from the content API...");
+
+        new Thread(() -> {
+            try {
+                repository.refresh();
+                runOnUiThread(() -> {
+                    if (preferences.getBoolean(KEY_PLACEMENT_COMPLETE, false)) {
+                        showHome();
+                    } else {
+                        showPlacement();
+                    }
+                });
+            } catch (Exception exception) {
+                runOnUiThread(() -> showContentError(exception));
+            }
+        }).start();
+    }
+
+    private void showContentError(Exception exception) {
+        root.removeAllViews();
+        addTitle("Content unavailable");
+        addBody("The app could not load learning content from the PostgreSQL-backed API.\n\n"
+                + exception.getMessage()
+                + "\n\nStart the backend service and check the API base URL, then try again.");
+        addButton("Try again").setOnClickListener(view -> loadContent());
     }
 
     private void showPlacement() {
@@ -60,6 +85,11 @@ public class MainActivity extends Activity {
         addBody("Start with a short adaptive placement. Your result suggests the DELE exam level to aim for and unlocks daily review themes.");
 
         List<QuizQuestion> questions = repository.getPlacementQuestions();
+        if (questions.isEmpty()) {
+            addBody("No placement questions are available yet. Add placement rows to PostgreSQL and refresh the app.");
+            addButton("Reload content").setOnClickListener(view -> loadContent());
+            return;
+        }
         for (QuizQuestion question : questions) {
             addQuestion(question);
         }
@@ -78,6 +108,7 @@ public class MainActivity extends Activity {
                     .apply();
             showPlacementResult(result);
         });
+        addButton("Reload content from database").setOnClickListener(view -> loadContent());
     }
 
     private void showPlacementResult(AssessmentEngine.AssessmentResult result) {
@@ -113,6 +144,11 @@ public class MainActivity extends Activity {
                 + " so review grows with your DELE target.");
 
         List<QuizQuestion> questions = repository.getDailyQuestions(targetLevel);
+        if (questions.isEmpty()) {
+            addBody("No daily quiz questions are available for this level yet.");
+            addBackHomeButton();
+            return;
+        }
         for (QuizQuestion question : questions) {
             addQuestion(question);
         }
@@ -145,7 +181,11 @@ public class MainActivity extends Activity {
         root.removeAllViews();
         addTitle("Grammar articles");
         addBody("DELE-aligned explanations are grouped from A1 to " + targetLevel.getLabel() + ".");
-        for (Article article : repository.getArticlesUpTo(targetLevel)) {
+        List<Article> articles = repository.getArticlesUpTo(targetLevel);
+        if (articles.isEmpty()) {
+            addBody("No articles are available for this level yet.");
+        }
+        for (Article article : articles) {
             LinearLayout card = addCard();
             addCardTitle(card, article.getLevel().getLabel() + " - " + article.getTitle());
             addCardBody(card, article.getGrammarFocus());
@@ -161,7 +201,11 @@ public class MainActivity extends Activity {
         addBody("Vocabulary and verb forms are tagged by the DELE level where they become most useful.");
 
         addSectionHeader("Vocabulary");
-        for (VocabularyEntry entry : repository.getVocabularyUpTo(targetLevel)) {
+        List<VocabularyEntry> vocabulary = repository.getVocabularyUpTo(targetLevel);
+        if (vocabulary.isEmpty()) {
+            addBody("No vocabulary entries are available for this level yet.");
+        }
+        for (VocabularyEntry entry : vocabulary) {
             LinearLayout card = addCard();
             addCardTitle(card, entry.getSpanish() + " - " + entry.getEnglish());
             addCardBody(card, entry.getLevel().getLabel() + " | " + entry.getTheme());
@@ -169,7 +213,11 @@ public class MainActivity extends Activity {
         }
 
         addSectionHeader("Verb conjugations");
-        for (VerbConjugation verb : repository.getVerbsUpTo(targetLevel)) {
+        List<VerbConjugation> verbs = repository.getVerbsUpTo(targetLevel);
+        if (verbs.isEmpty()) {
+            addBody("No verb conjugations are available for this level yet.");
+        }
+        for (VerbConjugation verb : verbs) {
             LinearLayout card = addCard();
             addCardTitle(card, verb.getInfinitive() + " - " + verb.getMeaning());
             addCardBody(card, verb.getLevel().getLabel());
