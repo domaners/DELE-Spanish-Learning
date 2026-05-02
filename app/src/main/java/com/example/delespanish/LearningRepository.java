@@ -218,16 +218,50 @@ final class LearningRepository {
         List<VerbConjugation> items = new ArrayList<>();
         items.add(new VerbConjugation(DeleLevel.A1, "ser", "presente", "to be", mapOf(
                 "yo", "soy", "tu", "eres", "el/ella", "es", "nosotros", "somos", "ellos", "son")));
+        items.add(new VerbConjugation(DeleLevel.A1, "estar", "presente", "to be", mapOf(
+                "yo", "estoy", "tu", "estas", "el/ella", "esta", "nosotros", "estamos", "ellos", "estan")));
+        items.add(new VerbConjugation(DeleLevel.A1, "tener", "presente", "to have", mapOf(
+                "yo", "tengo", "tu", "tienes", "el/ella", "tiene", "nosotros", "tenemos", "ellos", "tienen")));
         items.add(new VerbConjugation(DeleLevel.A2, "hablar", "presente", "to speak", mapOf(
                 "yo", "hablo", "tu", "hablas", "el/ella", "habla", "nosotros", "hablamos", "ellos", "hablan")));
+        items.add(new VerbConjugation(DeleLevel.A2, "comer", "presente", "to eat", mapOf(
+                "yo", "como", "tu", "comes", "el/ella", "come", "nosotros", "comemos", "ellos", "comen")));
+        items.add(new VerbConjugation(DeleLevel.A2, "vivir", "presente", "to live", mapOf(
+                "yo", "vivo", "tu", "vives", "el/ella", "vive", "nosotros", "vivimos", "ellos", "viven")));
+        items.add(new VerbConjugation(DeleLevel.A2, "ir", "futuro proximo", "to go", mapOf(
+                "yo", "voy a ir", "tu", "vas a ir", "el/ella", "va a ir", "nosotros", "vamos a ir", "ellos", "van a ir")));
         items.add(new VerbConjugation(DeleLevel.B1, "tener", "preterito", "to have", mapOf(
                 "yo", "tuve", "tu", "tuviste", "el/ella", "tuvo", "nosotros", "tuvimos", "ellos", "tuvieron")));
+        items.add(new VerbConjugation(DeleLevel.B1, "hablar", "preterito", "to speak", mapOf(
+                "yo", "hable", "tu", "hablaste", "el/ella", "hablo", "nosotros", "hablamos", "ellos", "hablaron")));
+        items.add(new VerbConjugation(DeleLevel.B1, "estar", "imperfecto", "to be", mapOf(
+                "yo", "estaba", "tu", "estabas", "el/ella", "estaba", "nosotros", "estabamos", "ellos", "estaban")));
+        items.add(new VerbConjugation(DeleLevel.B1, "ir", "imperfecto", "to go", mapOf(
+                "yo", "iba", "tu", "ibas", "el/ella", "iba", "nosotros", "ibamos", "ellos", "iban")));
         items.add(new VerbConjugation(DeleLevel.B2, "practicar", "presente de subjuntivo", "to practise", mapOf(
                 "yo", "practique", "tu", "practiques", "el/ella", "practique", "nosotros", "practiquemos", "ellos", "practiquen")));
+        items.add(new VerbConjugation(DeleLevel.B2, "ser", "presente de subjuntivo", "to be", mapOf(
+                "yo", "sea", "tu", "seas", "el/ella", "sea", "nosotros", "seamos", "ellos", "sean")));
+        items.add(new VerbConjugation(DeleLevel.B2, "hacer", "futuro simple", "to do/make", mapOf(
+                "yo", "hare", "tu", "haras", "el/ella", "hara", "nosotros", "haremos", "ellos", "haran")));
+        items.add(new VerbConjugation(DeleLevel.B2, "poder", "condicional", "to be able to", mapOf(
+                "yo", "podria", "tu", "podrias", "el/ella", "podria", "nosotros", "podriamos", "ellos", "podrian")));
         items.add(new VerbConjugation(DeleLevel.C1, "publicar", "pasiva perifrastica", "to publish", mapOf(
                 "presente", "es publicado", "preterito", "fue publicado", "futuro", "sera publicado", "condicional", "seria publicado")));
+        items.add(new VerbConjugation(DeleLevel.C1, "sostener", "presente", "to maintain/argue", mapOf(
+                "yo", "sostengo", "tu", "sostienes", "el/ella", "sostiene", "nosotros", "sostenemos", "ellos", "sostienen")));
+        items.add(new VerbConjugation(DeleLevel.C1, "haber", "pluscuamperfecto", "auxiliary to have", mapOf(
+                "yo", "habia", "tu", "habias", "el/ella", "habia", "nosotros", "habiamos", "ellos", "habian")));
+        items.add(new VerbConjugation(DeleLevel.C1, "decir", "imperativo afirmativo", "to say/tell", mapOf(
+                "tu", "di", "usted", "diga", "nosotros", "digamos", "vosotros", "decid", "ustedes", "digan")));
         items.add(new VerbConjugation(DeleLevel.C2, "deducir", "subjuntivo imperfecto", "to deduce", mapOf(
                 "yo", "dedujera", "tu", "dedujeras", "el/ella", "dedujera", "nosotros", "dedujeramos", "ellos", "dedujeran")));
+        items.add(new VerbConjugation(DeleLevel.C2, "satisfacer", "subjuntivo imperfecto", "to satisfy", mapOf(
+                "yo", "satisficiera", "tu", "satisficieras", "el/ella", "satisficiera", "nosotros", "satisficieramos", "ellos", "satisficieran")));
+        items.add(new VerbConjugation(DeleLevel.C2, "erguir", "gerundio y participio", "to raise/straighten", mapOf(
+                "gerundio", "irguiendo", "participio", "erguido", "yo presente", "irgo", "yo preterito", "ergui", "ellos subjuntivo", "irgan")));
+        items.add(new VerbConjugation(DeleLevel.C2, "prever", "futuro perfecto", "to foresee", mapOf(
+                "yo", "habre previsto", "tu", "habras previsto", "el/ella", "habra previsto", "nosotros", "habremos previsto", "ellos", "habran previsto")));
         return Collections.unmodifiableList(items);
     }
 
@@ -265,10 +299,54 @@ final class LearningRepository {
         items.get(DeleLevel.C1).add(question(DeleLevel.C1, "What does 'matiz' mean?", "nuance", "schedule", "breakfast", "mistake", 0));
         items.get(DeleLevel.C2).add(question(DeleLevel.C2, "Idioms often carry...", "only spelling rules", "cultural meaning", "no context", "basic gender", 1));
         items.get(DeleLevel.C2).add(question(DeleLevel.C2, "A precise C2 response should control vocabulary and...", "tone", "font size", "screen width", "battery", 0));
+        addConjugationQuestions(items);
         for (Map.Entry<DeleLevel, List<QuizQuestion>> entry : items.entrySet()) {
             entry.setValue(Collections.unmodifiableList(entry.getValue()));
         }
         return Collections.unmodifiableMap(items);
+    }
+
+    private void addConjugationQuestions(Map<DeleLevel, List<QuizQuestion>> items) {
+        for (VerbConjugation verb : conjugations) {
+            for (Map.Entry<String, String> form : verb.getForms().entrySet()) {
+                List<String> options = buildConjugationOptions(verb, form.getValue());
+                items.get(verb.getLevel()).add(new QuizQuestion(
+                        verb.getLevel(),
+                        "Conjugate " + verb.getInfinitive() + " (" + verb.getTense() + ") for " + form.getKey() + ".",
+                        options,
+                        options.indexOf(form.getValue())
+                ));
+            }
+        }
+    }
+
+    private List<String> buildConjugationOptions(VerbConjugation verb, String correctForm) {
+        List<String> options = new ArrayList<>();
+        addUniqueOption(options, correctForm);
+        for (String candidate : verb.getForms().values()) {
+            addUniqueOption(options, candidate);
+            if (options.size() == 4) {
+                return options;
+            }
+        }
+        for (VerbConjugation candidateVerb : conjugations) {
+            for (String candidate : candidateVerb.getForms().values()) {
+                addUniqueOption(options, candidate);
+                if (options.size() == 4) {
+                    return options;
+                }
+            }
+        }
+        while (options.size() < 4) {
+            addUniqueOption(options, correctForm + " " + options.size());
+        }
+        return options;
+    }
+
+    private void addUniqueOption(List<String> options, String candidate) {
+        if (!options.contains(candidate)) {
+            options.add(candidate);
+        }
     }
 
     private QuizQuestion question(DeleLevel level, String prompt, String a, String b, String c, String d, int correctAnswerIndex) {

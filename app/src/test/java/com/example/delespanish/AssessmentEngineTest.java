@@ -44,4 +44,20 @@ public class AssessmentEngineTest {
 
         Assert.assertEquals(DeleLevel.A1, result.getSuggestedLevel());
     }
+
+    @Test
+    public void dailyQuestionsIncludeConjugationForms() {
+        LearningRepository repository = new LearningRepository();
+
+        List<QuizQuestion> questions = repository.getDailyQuestions(DeleLevel.A1);
+
+        boolean foundConjugationPrompt = false;
+        for (QuizQuestion question : questions) {
+            if (question.getPrompt().contains("Conjugate ser (presente) for yo.")) {
+                foundConjugationPrompt = true;
+                Assert.assertEquals("soy", question.getOptions().get(question.getCorrectAnswerIndex()));
+            }
+        }
+        Assert.assertTrue(foundConjugationPrompt);
+    }
 }
