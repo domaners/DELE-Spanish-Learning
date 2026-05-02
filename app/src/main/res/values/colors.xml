@@ -1,5 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="dele_primary_dark">#003049</color>
+    <color name="primary_dark">#003049</color>
     <color name="brand_blue">#005BBB</color>
+    <color name="background">#F8FAFC</color>
+    <color name="background_highlight">#E0F2FE</color>
+    <color name="surface">#FFFFFF</color>
+    <color name="border">#CBD5E1</color>
+    <color name="text_primary">#0F172A</color>
+    <color name="text_secondary">#475569</color>
 </resources>
