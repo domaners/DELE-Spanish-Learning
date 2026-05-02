@@ -16,6 +16,8 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.dele.spanishlearning.R;
+
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
